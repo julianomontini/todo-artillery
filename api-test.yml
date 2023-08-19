@@ -1,0 +1,34 @@
+config:
+  target: "{{ $processEnvironment.SERVER_URL }}"
+  phases:
+    - duration: 30
+      arrivalRate: 10
+  processor: "./functions.js"
+scenarios:
+  - flow:
+      - function: "generateUsername"
+      - post:
+          url: "/signup"
+          json:
+            username: "{{ username }}"
+            password: "12345678"
+      - post:
+          url: "/login"
+          json:
+            username: "{{ username }}"
+            password: "12345678"
+          capture:
+            - json: "$.access_token"
+              as: "access_token"
+      - loop:
+          - post:
+              url: "/todos"
+              json:
+                title: "Test Todo"
+              headers:
+                Authorization: "Bearer {{ access_token }}"
+        count: 5
+      - get:
+          url: "/todos"
+          headers:
+            Authorization: "Bearer {{ access_token }}"
